@@ -8,16 +8,22 @@ public class PlayerController : MonoBehaviour
     float _horizontalInput;
     float _verticalInput;
 
+    Rigidbody2D _playerRb;
+
     // Start is called before the first frame update
     void Start()
     {
-        
+        _playerRb = GetComponent<Rigidbody2D>();
     }
 
     // Update is called once per frame
     void Update()
     {
         PlayerInput();
+    }
+
+    private void FixedUpdate()
+    {
         PlayerMovement();
     }
 
@@ -31,12 +37,12 @@ public class PlayerController : MonoBehaviour
     {
         if (_horizontalInput != 0)
         {
-            transform.Translate(Vector2.right * _horizontalInput * _speed * Time.deltaTime);
+            _playerRb.MovePosition(transform.position + transform.right * _speed * _horizontalInput * Time.deltaTime);
         }
 
         if (_verticalInput != 0)
         {
-            transform.Translate(Vector2.up * _verticalInput * _speed * Time.deltaTime);
+            _playerRb.MovePosition(transform.position + transform.up * _speed * _verticalInput * Time.deltaTime);
         }
     }
 
