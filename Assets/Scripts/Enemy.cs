@@ -4,29 +4,49 @@ using UnityEngine;
 
 public class Enemy : MonoBehaviour
 {
-    [SerializeField] Transform playerPostion;
+    [SerializeField] Transform _playerPostion;
+    [SerializeField] PlayerController _playerController;
+
     Rigidbody2D _enemyRb;
+    SpriteRenderer _enemySpriteRenderer;
+   
+    Vector3 _startPos;
 
     float _speed = 10.0f;
+
     bool _isCollideWithWall = false;
     bool _isCollideWithTopWall = false;
+    bool _isDead = false;
+
     // Start is called before the first frame update
     void Start()
     {
+        _startPos = transform.position;
         _enemyRb = GetComponent<Rigidbody2D>();
+        _enemySpriteRenderer = GetComponent<SpriteRenderer>();
     }
 
     // Update is called once per frame
     void Update()
     {
-        EnemyMovement();
+        ChangeColor();
+
+        if (!_isDead)
+        {
+            AliveMovement();
+        }
+
+        else if (_isDead)
+        {
+            DeadMovement();
+        }
     }
 
-    void EnemyMovement()
+    void AliveMovement()
     {
         if (!_isCollideWithWall && !_isCollideWithTopWall)
         {
-            Vector3 distance = playerPostion.position - transform.position;
+            Vector3 distance = _playerPostion.position - transform.position;
             _enemyRb.MovePosition(transform.position + distance.normalized * _speed * Time.deltaTime);
         }
 
@@ -36,7 +56,7 @@ public class Enemy : MonoBehaviour
             {
                 _enemyRb.MovePosition(transform.position + Vector3.down * _speed * Time.deltaTime);
             }
-            
+
             else
             {
                 _enemyRb.MovePosition(transform.position + Vector3.up * _speed * Time.deltaTime);
@@ -45,18 +65,65 @@ public class Enemy : MonoBehaviour
         }
     }
 
-    private void OnCollisionEnter2D(Collision2D collision)
+    void DeadMovement()
     {
-        if (collision.gameObject.tag == "Player")
+        if (!_isCollideWithWall && !_isCollideWithTopWall)
         {
-            Debug.Log("Game Over");
-            Destroy(collision.gameObject);
-            Destroy(gameObject);
+            Vector3 distance = _startPos - transform.position;
+            _enemyRb.MovePosition(transform.position + distance.normalized * _speed * Time.deltaTime);
         }
 
-        else if (collision.gameObject.tag == "Wall")
+        else
         {
-            _isCollideWithWall=true;
+            if (_isCollideWithTopWall)
+            {
+                _enemyRb.MovePosition(transform.position + Vector3.down * _speed * Time.deltaTime);
+            }
+
+            else
+            {
+                _enemyRb.MovePosition(transform.position + Vector3.up * _speed * Time.deltaTime);
+            }
+        }
+    }
+
+    void ChangeColor()
+    {
+        if (_playerController.IsPowerUp && !_isDead)
+        {
+            _enemySpriteRenderer.color = Color.blue;
+        }
+
+        else if (!_playerController.IsPowerUp && !_isDead)
+        {
+            _enemySpriteRenderer.color = Color.red;
+        }
+    }
+
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+
+        if (collision.gameObject.tag == "Player")
+        {
+            if (_playerController.IsPowerUp)
+            {
+                _isDead = true;
+                _enemySpriteRenderer.color = Color.gray;
+            }
+
+            else
+            {
+                Debug.Log("Game Over");
+                Destroy(collision.gameObject);
+                Destroy(gameObject);
+            }
+
+        }
+
+
+        if (collision.gameObject.tag == "Wall")
+        {
+            _isCollideWithWall = true;
             _enemyRb.MovePosition(transform.position + Vector3.up * Time.deltaTime);
             Debug.Log("Collide with wall");
         }
@@ -78,10 +145,32 @@ public class Enemy : MonoBehaviour
             Debug.Log("Not collide with wall");
         }
 
-        else if (collision.gameObject.tag == "TopWall") 
+        else if (collision.gameObject.tag == "TopWall")
         {
             _isCollideWithTopWall = false;
             Debug.Log("Not collide with top wall");
+        }
+    }
+
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        if (collision.gameObject.tag == "LeftTeleport")
+        {
+            transform.position = new Vector3(15, transform.position.y, transform.position.z);
+        }
+
+        else if (collision.gameObject.tag == "RightTeleport")
+        {
+            transform.position = new Vector3(-15, transform.position.y, transform.position.z);
+        }
+
+        else if (collision.gameObject.tag == "GhostPlace")
+        {
+            if (_isDead)
+            {
+                _isDead = false;
+                _enemySpriteRenderer.color = Color.red;
+            }
         }
     }
 }

@@ -9,6 +9,10 @@ TagManager:
   - Obstacles
   - Wall
   - TopWall
+  - LeftTeleport
+  - RightTeleport
+  - PowerUp
+  - GhostPlace
   layers:
   - Default
   - TransparentFX
