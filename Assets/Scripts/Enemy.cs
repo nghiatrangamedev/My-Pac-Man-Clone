@@ -4,47 +4,62 @@ using UnityEngine;
 
 public class Enemy : MonoBehaviour
 {
+    [SerializeField] GameManager _gameManager;
     [SerializeField] Transform _playerPostion;
+    [SerializeField] Transform _ghostPlace;
     [SerializeField] PlayerController _playerController;
+    [SerializeField] AudioClip _beEatenSound;
+    [SerializeField] AudioClip _deathSound;
 
+    AudioSource _enemyAudio;
     Rigidbody2D _enemyRb;
     SpriteRenderer _enemySpriteRenderer;
-   
-    Vector3 _startPos;
+    Animator _enemyAnimator;
 
     float _speed = 10.0f;
 
-    bool _isCollideWithWall = false;
-    bool _isCollideWithTopWall = false;
+    bool _isMoveUp = false;
+    bool _isMoveDown = false;
+    bool _isMoveRight = false;
+    bool _isMoveLeft = false;
+
     bool _isDead = false;
 
     // Start is called before the first frame update
     void Start()
     {
-        _startPos = transform.position;
         _enemyRb = GetComponent<Rigidbody2D>();
         _enemySpriteRenderer = GetComponent<SpriteRenderer>();
+        _enemyAudio = GetComponent<AudioSource>();
+        _enemyAnimator = GetComponent<Animator>();
     }
 
     // Update is called once per frame
     void Update()
     {
-        ChangeColor();
 
-        if (!_isDead)
+        if (_gameManager.IsStarting)
         {
-            AliveMovement();
-        }
+            ChangeColor();
 
-        else if (_isDead)
-        {
-            DeadMovement();
+            if (!_isDead)
+            {
+                AliveMovement();
+            }
+
+            else if (_isDead)
+            {
+                DeadMovement();
+            }
         }
+       
     }
 
     void AliveMovement()
     {
-        if (!_isCollideWithWall && !_isCollideWithTopWall)
+        _speed = 10.0f;
+
+        if (!_isMoveUp && ! _isMoveDown && !_isMoveLeft && !_isMoveRight)
         {
             Vector3 distance = _playerPostion.position - transform.position;
             _enemyRb.MovePosition(transform.position + distance.normalized * _speed * Time.deltaTime);
@@ -52,37 +67,58 @@ public class Enemy : MonoBehaviour
 
         else
         {
-            if (_isCollideWithTopWall)
+            if (_isMoveDown)
             {
                 _enemyRb.MovePosition(transform.position + Vector3.down * _speed * Time.deltaTime);
             }
 
-            else
+            else if (_isMoveUp)
             {
                 _enemyRb.MovePosition(transform.position + Vector3.up * _speed * Time.deltaTime);
             }
 
+            else if (_isMoveLeft)
+            {
+                _enemyRb.MovePosition(transform.position + Vector3.left * _speed * Time.deltaTime);
+            }
+
+            else
+            {
+                _enemyRb.MovePosition(transform.position + Vector3.right * _speed * Time.deltaTime);
+            }
         }
     }
 
     void DeadMovement()
     {
-        if (!_isCollideWithWall && !_isCollideWithTopWall)
+        _speed = 20.0f;
+
+        if (!_isMoveUp && !_isMoveDown && !_isMoveLeft && !_isMoveRight)
         {
-            Vector3 distance = _startPos - transform.position;
+            Vector3 distance = _ghostPlace.position - transform.position;
             _enemyRb.MovePosition(transform.position + distance.normalized * _speed * Time.deltaTime);
         }
 
         else
         {
-            if (_isCollideWithTopWall)
+            if (_isMoveDown)
             {
                 _enemyRb.MovePosition(transform.position + Vector3.down * _speed * Time.deltaTime);
             }
 
-            else
+            else if (_isMoveUp)
             {
                 _enemyRb.MovePosition(transform.position + Vector3.up * _speed * Time.deltaTime);
+            }
+
+            else if (_isMoveLeft)
+            {
+                _enemyRb.MovePosition(transform.position + Vector3.left * _speed * Time.deltaTime);
+            }
+
+            else
+            {
+                _enemyRb.MovePosition(transform.position + Vector3.right * _speed * Time.deltaTime);
             }
         }
     }
@@ -91,13 +127,18 @@ public class Enemy : MonoBehaviour
     {
         if (_playerController.IsPowerUp && !_isDead)
         {
-            _enemySpriteRenderer.color = Color.blue;
+            _enemySpriteRenderer.color = Color.cyan;
         }
 
         else if (!_playerController.IsPowerUp && !_isDead)
         {
             _enemySpriteRenderer.color = Color.red;
         }
+    }
+
+    void ActiveAnimation()
+    {
+        _enemyAnimator.SetBool("_isMoving", true);
     }
 
     private void OnCollisionEnter2D(Collision2D collision)
@@ -107,48 +148,70 @@ public class Enemy : MonoBehaviour
         {
             if (_playerController.IsPowerUp)
             {
+                _enemyAudio.PlayOneShot(_beEatenSound);
                 _isDead = true;
                 _enemySpriteRenderer.color = Color.gray;
             }
 
             else
             {
+                _enemyAudio.PlayOneShot(_deathSound);
                 Debug.Log("Game Over");
-                Destroy(collision.gameObject);
-                Destroy(gameObject);
             }
 
         }
 
 
-        if (collision.gameObject.tag == "Wall")
+        if (collision.gameObject.tag == "MoveUp")
         {
-            _isCollideWithWall = true;
+            _isMoveUp = true;
             _enemyRb.MovePosition(transform.position + Vector3.up * Time.deltaTime);
-            Debug.Log("Collide with wall");
+            Debug.Log("Move Up");
         }
 
-        else if (collision.gameObject.tag == "TopWall")
+        else if (collision.gameObject.tag == "MoveDown")
         {
-            _isCollideWithTopWall = true;
+            _isMoveDown = true;
             _enemyRb.MovePosition(transform.position + Vector3.down * Time.deltaTime);
-            Debug.Log("Collide with top wall");
+            Debug.Log("Move Down");
+        }
+
+        else if (collision.gameObject.tag == "MoveLeft")
+        {
+            _isMoveLeft = true;
+            _enemyRb.MovePosition(transform.position + Vector3.left * Time.deltaTime);
+            Debug.Log("Move Left");
+        }
+
+        else if (collision.gameObject.tag == "MoveRight")
+        {
+            _isMoveRight = true;
+            _enemyRb.MovePosition(transform.position + Vector3.right * Time.deltaTime);
+            Debug.Log("Move Right");
         }
 
     }
 
     private void OnCollisionExit2D(Collision2D collision)
     {
-        if (collision.gameObject.tag == "Wall")
+        if (collision.gameObject.tag == "MoveUp")
         {
-            _isCollideWithWall = false;
-            Debug.Log("Not collide with wall");
+            _isMoveUp = false;
         }
 
-        else if (collision.gameObject.tag == "TopWall")
+        else if (collision.gameObject.tag == "MoveDown")
         {
-            _isCollideWithTopWall = false;
-            Debug.Log("Not collide with top wall");
+            _isMoveDown = false;
+        }
+
+        else if (collision.gameObject.tag == "MoveLeft")
+        {
+            _isMoveLeft = false;
+        }
+
+        else if (collision.gameObject.tag == "MoveRight")
+        {
+            _isMoveRight = false;
         }
     }
 

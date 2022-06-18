@@ -4,11 +4,27 @@ using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
+    [SerializeField] GameManager _gameManager;
+    [SerializeField] AudioClip _chompSound;
+
+    AudioSource _playerAudio;
+    Animator _playerAnimator;
+
     float _speed = 10.0f;
     float _horizontalInput;
     float _verticalInput;
 
     bool _isPowerup = false;
+    bool _isDeath = false;
+
+    bool _isChompSoundPlayed = false;
+
+    bool _isFaceRight = true;
+    bool _isFaceLeft = false;
+    bool _isFaceUp = false;
+    bool _isFaceDown = false;
+
+
     public bool IsPowerUp
 
     {
@@ -25,12 +41,24 @@ public class PlayerController : MonoBehaviour
     void Start()
     {
         _playerRb = GetComponent<Rigidbody2D>();
+        _playerAudio = GetComponent<AudioSource>();
+        _playerAnimator = GetComponent<Animator>();
     }
 
     // Update is called once per frame
     void Update()
     {
-        PlayerInput();
+        if (_gameManager.IsStarting)
+        {
+            ActiveEatAnimation();
+            if (!_isDeath)
+            {
+                PlayerInput();
+                RotatePlayer();
+            }
+            
+        }
+        
     }
 
     private void FixedUpdate()
@@ -48,12 +76,81 @@ public class PlayerController : MonoBehaviour
     {
         if (_horizontalInput != 0)
         {
-            _playerRb.MovePosition(transform.position + transform.right * _speed * _horizontalInput * Time.deltaTime);
+            CheckChompSound();
+            _playerRb.MovePosition(transform.position + Vector3.right * _speed * _horizontalInput * Time.deltaTime);
         }
 
         if (_verticalInput != 0)
         {
-            _playerRb.MovePosition(transform.position + transform.up * _speed * _verticalInput * Time.deltaTime);
+            CheckChompSound();
+            _playerRb.MovePosition(transform.position + Vector3.up * _speed * _verticalInput * Time.deltaTime);
+        }
+    }
+
+    void RotatePlayer()
+    {
+        if (_verticalInput > 0 && !_isFaceUp)
+        {
+            _isFaceUp = true;
+            transform.rotation = Quaternion.Euler(0, 0, 90);
+
+            _isFaceDown = false;
+            _isFaceLeft = false;
+            _isFaceRight = false;
+        }
+
+        else if (_verticalInput < 0 && !_isFaceLeft)
+        {
+            _isFaceDown = true;
+            transform.rotation = Quaternion.Euler(0, 0, -90);
+
+            _isFaceUp = false;
+            _isFaceLeft = false;
+            _isFaceRight = false;
+        }
+
+        else if (_horizontalInput > 0 && !_isFaceRight)
+        {
+            _isFaceRight = true;
+            transform.rotation = Quaternion.Euler(0, 0, 0);
+
+            _isFaceUp = false;
+            _isFaceDown = false;
+            _isFaceLeft = false;
+        }
+
+        else if (_horizontalInput < 0 && !_isFaceLeft)
+        {
+            _isFaceLeft = true;
+            transform.rotation = Quaternion.Euler(0, 180, 0);
+
+            _isFaceUp = false;
+            _isFaceDown = false;
+            _isFaceRight = false;
+        }
+    }
+
+    void CheckChompSound()
+    {
+        if (!_isChompSoundPlayed)
+        {
+            _playerAudio.PlayOneShot(_chompSound);
+            _isChompSoundPlayed = true;
+            StartCoroutine(ChompSoundTime());
+        }
+        
+    }
+
+    void ActiveEatAnimation()
+    {
+        if (_horizontalInput != 0 || _verticalInput != 0)
+        {
+            _playerAnimator.SetFloat("_speed", 1);
+        }
+
+        else
+        {
+            _playerAnimator.SetFloat("_speed", 0);
         }
     }
 
@@ -62,6 +159,18 @@ public class PlayerController : MonoBehaviour
         yield return new WaitForSeconds(5);
         _isPowerup = false;
         Debug.Log("Power up is over");
+    }
+
+    IEnumerator ChompSoundTime()
+    {
+        yield return new WaitForSeconds(1);
+        _isChompSoundPlayed = false;
+    }
+
+    IEnumerator WaitDeathAnimatorEnd()
+    {
+        yield return new WaitForSeconds(0.7f);
+        Destroy(gameObject);
     }
 
     private void OnTriggerEnter2D(Collider2D collision)
@@ -85,5 +194,17 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        if (collision.gameObject.tag == "Enemy")
+        {
+            if (!IsPowerUp && !_isDeath)
+            {
+                _isDeath = true;
+                _playerAnimator.SetBool("_isDeath", true);
+                StartCoroutine(WaitDeathAnimatorEnd());
+            }
+        }
+    }
 
 }
