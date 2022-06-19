@@ -40,6 +40,7 @@ public class Enemy : MonoBehaviour
 
         if (_gameManager.IsStarting)
         {
+            ActiveAnimation();
             ChangeColor();
 
             if (!_isDead)
@@ -166,28 +167,24 @@ public class Enemy : MonoBehaviour
         {
             _isMoveUp = true;
             _enemyRb.MovePosition(transform.position + Vector3.up * Time.deltaTime);
-            Debug.Log("Move Up");
         }
 
         else if (collision.gameObject.tag == "MoveDown")
         {
             _isMoveDown = true;
             _enemyRb.MovePosition(transform.position + Vector3.down * Time.deltaTime);
-            Debug.Log("Move Down");
         }
 
         else if (collision.gameObject.tag == "MoveLeft")
         {
             _isMoveLeft = true;
             _enemyRb.MovePosition(transform.position + Vector3.left * Time.deltaTime);
-            Debug.Log("Move Left");
         }
 
         else if (collision.gameObject.tag == "MoveRight")
         {
             _isMoveRight = true;
             _enemyRb.MovePosition(transform.position + Vector3.right * Time.deltaTime);
-            Debug.Log("Move Right");
         }
 
     }

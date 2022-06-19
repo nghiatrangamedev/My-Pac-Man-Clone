@@ -158,7 +158,6 @@ public class PlayerController : MonoBehaviour
     {
         yield return new WaitForSeconds(5);
         _isPowerup = false;
-        Debug.Log("Power up is over");
     }
 
     IEnumerator ChompSoundTime()
@@ -177,19 +176,18 @@ public class PlayerController : MonoBehaviour
     {
         if (collision.gameObject.tag == "LeftTeleport")
         {
-            transform.position = new Vector3(15, transform.position.y, transform.position.z);
+            transform.position = new Vector3(18, transform.position.y, transform.position.z);
         }
 
         else if (collision.gameObject.tag == "RightTeleport")
         {
-            transform.position = new Vector3(-15, transform.position.y, transform.position.z);
+            transform.position = new Vector3(-18, transform.position.y, transform.position.z);
         }
 
         else if (collision.gameObject.tag == "PowerUp")
         {
             Destroy(collision.gameObject);
             _isPowerup = true;
-            Debug.Log("Now you can eat the enemy ! ^.^ ");
             StartCoroutine(TurnOffPowerUp());
         }
     }
@@ -200,6 +198,7 @@ public class PlayerController : MonoBehaviour
         {
             if (!IsPowerUp && !_isDeath)
             {
+                _gameManager.IsGameOver = true;
                 _isDeath = true;
                 _playerAnimator.SetBool("_isDeath", true);
                 StartCoroutine(WaitDeathAnimatorEnd());
